@@ -1,6 +1,6 @@
 // example-usage.js - Example of how to use the J-algo Live Trader
 
-import { LiveTrader } from './j-algo-live-trader.js';
+import { LiveTrader } from './markets/jalgo-live-trader.js';
 import fs from 'fs';
 import dotenv from 'dotenv';
 
