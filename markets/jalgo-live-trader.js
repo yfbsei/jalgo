@@ -234,13 +234,13 @@ async function sendStatsPanel(state, stats, config, webhookUrl) {
 async function sendSignal(signal, state, webhookUrl, type = 'entry') {
   try {
     let embed = {
-      username: 'J-Trend Sniper v3',
-      avatar_url: 'https://yt3.googleusercontent.com/W5i3MAGlRSO-l3ykaKrWtieVp-hHJmufF4wZPxEEKsRz57LTXpLNsLw3gOITAJgLPb8KZ0uv=s160-c-k-c0x00ffffff-no-rj',
+      username: 'J-algo',
+      avatar_url: 'https://raw.githubusercontent.com/yfbsei/J-algo-app/refs/heads/main/static/images/jalgo-app-logo.png',
       embeds: [{
         title: `${signal.symbol} ${signal.interval} - ${type.toUpperCase()}`,
         timestamp: new Date().toISOString(),
         footer: {
-          text: `J-Trend Sniper v3 - ${signal.isFutures ? 'Futures' : 'Spot'}`
+          text: `J-algo - ${signal.isFutures ? 'Futures' : 'Spot'}`
         }
       }]
     };
@@ -352,7 +352,7 @@ class LiveTrader {
    * Initialize the trader and connect to market data
    */
   async initialize() {
-    console.log(`Initializing J-Trend Sniper v3 Live Trader for ${this.config.symbol} ${this.config.interval} on Binance ${this.config.isFutures ? 'Futures' : 'Spot'}`);
+    console.log(`Initializing J-algo Live Trader for ${this.config.symbol} ${this.config.interval} on Binance ${this.config.isFutures ? 'Futures' : 'Spot'}`);
     
     try {
       // Fetch initial candle data
@@ -798,7 +798,7 @@ async function createMultipleTraders(configurations = []) {
  * Main function to start the live trader
  */
 async function main() {
-  console.log("Starting J-Trend Sniper v3 Live Trader");
+  console.log("Starting J-algo Live Trader");
   console.log("======================================");
   
   try {
