@@ -495,6 +495,14 @@ class LiveTrader {
       // Run the trading algorithm
       const result = jAlgo(this.candles, this.state, this.config);
       
+      // debug
+      console.log("Indicators:", JSON.stringify({
+        defATR: result.indicators.defATR.slice(-3),
+        var_ma: result.indicators.var_ma.slice(-3),
+        scalpLine: result.indicators.scalpLine.slice(-3)
+      }));
+      console.log("Signal generated:", result.signal);
+
       // Update state
       this.state = result.state;
       
