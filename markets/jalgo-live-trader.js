@@ -1,6 +1,6 @@
 import { WebSocket } from 'ws';
 import fetch from 'node-fetch';
-import jAlgo from '../src/jalgo.js';
+import jAlgo from 'j-algo-core';
 import dotenv from 'dotenv';
 import { createCanvas } from 'canvas';
 import { MessageAttachment } from 'discord.js';
