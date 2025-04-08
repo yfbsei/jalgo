@@ -2,10 +2,8 @@ import { WebSocket } from 'ws';
 import fetch from 'node-fetch';
 import jAlgo from 'j-algo-core';
 import dotenv from 'dotenv';
-import { createCanvas } from 'canvas';
-import { MessageAttachment } from 'discord.js';
 import fs from 'fs';
-import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Load environment variables
 dotenv.config();
@@ -96,7 +94,7 @@ async function fetchBinanceData(symbol, interval, limit = 1000, isFutures = fals
 }
 
 /**
- * Create and send a statistics panel image to Discord
+ * Create and send a statistics panel to Discord as a rich embed
  * 
  * @param {Object} state - Current state from jAlgo
  * @param {Object} stats - Statistics data from jAlgo
@@ -105,117 +103,68 @@ async function fetchBinanceData(symbol, interval, limit = 1000, isFutures = fals
  */
 async function sendStatsPanel(state, stats, config, webhookUrl) {
   try {
-    // Create canvas for drawing the stats panel
-    const canvas = createCanvas(250, 450);
-    const ctx = canvas.getContext('2d');
+    // Calculate total trades
+    const totalLongTrades = stats.totalLongTrades;
+    const totalShortTrades = stats.totalShortTrades;
+    const totalTrades = totalLongTrades + totalShortTrades;
     
-    // Set background
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Format colors for profit/loss visualization
+    const profitColor = state.totalProfitLoss >= 0 ? 0x00FF00 : 0xFF0000; // Green or Red
     
-    // Draw border
-    ctx.strokeStyle = '#555555';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
-    
-    // Set text styles
-    ctx.font = 'bold 14px Arial';
-    ctx.textAlign = 'center';
-    
-    // Draw header
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillText('Risk-Reward Stats', canvas.width / 2, 20);
-    ctx.fillText('Values', canvas.width / 2, 20);
-    
-    // Draw line under header
-    ctx.strokeStyle = '#555555';
-    ctx.beginPath();
-    ctx.moveTo(10, 30);
-    ctx.lineTo(canvas.width - 10, 30);
-    ctx.stroke();
-    
-    // Set up for table data
-    ctx.font = '12px Arial';
-    ctx.textAlign = 'left';
-    
-    // Draw table data
-    const statItems = [
-      { label: 'Long Signals', value: stats.totalLongTrades, color: '#FFFFFF' },
-      { label: 'Short Signals', value: stats.totalShortTrades, color: '#FFFFFF' },
-      { label: 'Successful Longs', value: state.longWins, color: '#FFFFFF' },
-      { label: 'Successful Shorts', value: state.shortWins, color: '#FFFFFF' },
-      { label: 'Long Target Hits', value: state.longTargetHits, color: '#FFFFFF' },
-      { label: 'Short Target Hits', value: state.shortTargetHits, color: '#FFFFFF' },
-      { label: 'Overall Win %', value: stats.overallWinRate.toFixed(2) + '%', color: '#FFFFFF' },
-      { label: 'Initial Capital', value: '$' + config.initialCapital.toFixed(2), color: '#FFFFFF' },
-      { label: 'Current Capital', value: '$' + state.currentCapital.toFixed(2), 
-        color: state.currentCapital >= config.initialCapital ? '#00FF00' : '#FF0000' },
-      { label: 'Total P/L', value: '$' + state.totalProfitLoss.toFixed(2), 
-        color: state.totalProfitLoss >= 0 ? '#00FF00' : '#FF0000' },
-      { label: 'Total Profit', value: '$' + state.totalProfit.toFixed(2), color: '#00FF00' },
-      { label: 'Total Loss', value: '$' + state.totalLoss.toFixed(2), color: '#FF0000' },
-      { label: 'R:R Ratio', value: '1:' + config.rewardMultiple, color: '#FFFFFF' },
-      { label: 'Risk Per Trade', value: config.riskPerTrade + '%', color: '#FFFFFF' },
-      { label: 'Efficiency', value: stats.efficiency.toFixed(2) + '%', 
-        color: stats.efficiency >= 0 ? '#00FF00' : '#FF0000' },
-      { label: 'Scalp Mode', value: 'ON', color: '#00FF00' },
-      { label: 'Leverage', value: config.useLeverage ? config.leverageAmount + 'x' : 'OFF', 
-        color: config.useLeverage ? '#00FF00' : '#FFFF00' }
-    ];
-    
-    statItems.forEach((item, index) => {
-      const y = 50 + index * 22;
-      
-      // Draw label
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillText(item.label, 15, y);
-      
-      // Draw value
-      ctx.fillStyle = item.color;
-      ctx.textAlign = 'right';
-      ctx.fillText(item.value, canvas.width - 15, y);
-      ctx.textAlign = 'left';
-    });
-    
-    // Convert canvas to buffer
-    const buffer = canvas.toBuffer('image/png');
-    
-    // Save to temp file
-    const filename = `stats_panel_${Date.now()}.png`;
-    const filePath = path.join(process.env.TEMP_DIR || '/tmp', filename);
-    fs.writeFileSync(filePath, buffer);
+    // Create a rich embed with all stats
+    const embed = {
+      username: 'J-algo',
+      avatar_url: 'https://raw.githubusercontent.com/yfbsei/J-algo-app/refs/heads/main/static/images/jalgo-app-logo.png',
+      embeds: [{
+        title: `Stats Panel - ${config.symbol} ${config.interval}`,
+        color: profitColor,
+        description: `Trading statistics for ${config.symbol} ${config.interval} on ${config.isFutures ? 'Futures' : 'Spot'}`,
+        fields: [
+          // Trade signals section
+          { name: 'Long Signals', value: totalLongTrades.toString(), inline: true },
+          { name: 'Short Signals', value: totalShortTrades.toString(), inline: true },
+          { name: 'Total Signals', value: totalTrades.toString(), inline: true },
+          
+          // Performance section
+          { name: 'Successful Longs', value: state.longWins.toString(), inline: true },
+          { name: 'Successful Shorts', value: state.shortWins.toString(), inline: true },
+          { name: 'Overall Win %', value: `${stats.overallWinRate.toFixed(2)}%`, inline: true },
+          
+          // Target hits section
+          { name: 'Long Target Hits', value: state.longTargetHits.toString(), inline: true },
+          { name: 'Short Target Hits', value: state.shortTargetHits.toString(), inline: true },
+          { name: 'Total Target Hits', value: (state.longTargetHits + state.shortTargetHits).toString(), inline: true },
+          
+          // Capital and profit metrics
+          { name: 'Initial Capital', value: `$${config.initialCapital.toFixed(2)}`, inline: true },
+          { name: 'Current Capital', value: `$${state.currentCapital.toFixed(2)}`, inline: true },
+          { name: 'Total P/L', value: `$${state.totalProfitLoss.toFixed(2)}`, inline: true },
+          
+          // More detailed metrics
+          { name: 'Total Profit', value: `$${state.totalProfit.toFixed(2)}`, inline: true },
+          { name: 'Total Loss', value: `$${state.totalLoss.toFixed(2)}`, inline: true },
+          { name: 'Efficiency', value: `${stats.efficiency.toFixed(2)}%`, inline: true },
+          
+          // System settings
+          { name: 'R:R Ratio', value: `1:${config.rewardMultiple}`, inline: true },
+          { name: 'Risk Per Trade', value: `${config.riskPerTrade}%`, inline: true },
+          { name: 'Leverage', value: config.useLeverage ? `${config.leverageAmount}x` : 'OFF', inline: true },
+        ],
+        timestamp: new Date().toISOString(),
+        footer: {
+          text: 'J-algo Trading Bot'
+        }
+      }]
+    };
     
     // Send to Discord
-    const attachment = new MessageAttachment(filePath, filename);
-    
     await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        content: `Stats Panel - ${config.symbol} ${config.interval} - ${new Date().toLocaleString()}`,
-        files: [
-          {
-            id: 0,
-            name: filename,
-            description: "Trading Statistics Panel"
-          }
-        ]
-      })
+      body: JSON.stringify(embed)
     });
-    
-    // Upload the file in a second request
-    const formData = new FormData();
-    formData.append('files[0]', fs.createReadStream(filePath));
-    
-    await fetch(webhookUrl + '?wait=true', {
-      method: 'PATCH',
-      body: formData
-    });
-    
-    // Clean up temp file
-    fs.unlinkSync(filePath);
     
     console.log(`Stats panel sent to Discord at ${new Date().toLocaleString()}`);
   } catch (error) {

@@ -40,7 +40,7 @@ async function runExample() {
     leverageAmount: 5.0
   };
   
-  console.log("Creating trader for BTC/USDT 4h with the following settings:");
+  console.log("Creating trader with the following settings:");
   console.log(JSON.stringify(config, null, 2));
   
   try {
