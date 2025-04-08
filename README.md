@@ -1,5 +1,6 @@
 # J-algo Live Trader
 
+# requires J-algo's engine to run, which is not public
 A real-time trading bot that implements the J-algo algorithm for cryptocurrency trading on Binance spot and futures markets with Discord notifications.
 
 ## Features
